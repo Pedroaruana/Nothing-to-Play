@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter_Tight, JetBrains_Mono } from 'next/font/google'
 import type { ReactNode } from 'react'
+import { LocaleProvider } from '@/src/i18n/LocaleProvider'
 import './globals.css'
 
 const display = Inter_Tight({
@@ -28,7 +29,9 @@ export const viewport: Viewport = {
 
 const RootLayout = ({ children }: { children: ReactNode }) => (
   <html lang="pt-BR" className={`${display.variable} ${mono.variable}`}>
-    <body className="bg-void text-bone antialiased">{children}</body>
+    <body className="bg-void text-bone antialiased">
+      <LocaleProvider>{children}</LocaleProvider>
+    </body>
   </html>
 )
 

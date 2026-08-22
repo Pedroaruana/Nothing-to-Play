@@ -60,6 +60,8 @@ const AmbientField = ({ phase }: Props) => {
     const uFlight = gl.getUniformLocation(program, 'u_flight')
     const uResolve = gl.getUniformLocation(program, 'u_resolve')
     const uPointer = gl.getUniformLocation(program, 'u_pointer')
+    const uMouse = gl.getUniformLocation(program, 'u_mouse')
+    const uHasMouse = gl.getUniformLocation(program, 'u_hasMouse')
 
     let raf = 0
     let last = performance.now()
@@ -70,6 +72,10 @@ const AmbientField = ({ phase }: Props) => {
     let lastPhase = phaseRef.current
 
     const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 }
+
+    // cursor cru no mesmo sistema do uv do shader. o dpr se cancela na conta,
+    // então dá pra usar pixel de css direto
+    const mouse = { x: 0, y: 0, on: 0 }
 
     // devolve true se mudou de tamanho, aí sei que preciso redesenhar
     const resize = () => {
@@ -85,8 +91,25 @@ const AmbientField = ({ phase }: Props) => {
     }
 
     const onPointerMove = (event: PointerEvent) => {
-      pointer.targetX = (event.clientX / window.innerWidth - 0.5) * 2
-      pointer.targetY = (0.5 - event.clientY / window.innerHeight) * 2
+      const w = window.innerWidth
+      const h = window.innerHeight
+
+      pointer.targetX = (event.clientX / w - 0.5) * 2
+      pointer.targetY = (0.5 - event.clientY / h) * 2
+
+      mouse.x = (event.clientX - w * 0.5) / h
+      mouse.y = (h * 0.5 - event.clientY) / h
+
+      // dedo não tem hover, então a seleção fica só no mouse mesmo
+      mouse.on = event.pointerType === 'touch' ? 0 : 1
+
+      // com reduced motion o loop fica parado, precisa acordar pra mover a seleção
+      dirty = true
+    }
+
+    const onPointerLeave = () => {
+      mouse.on = 0
+      dirty = true
     }
 
     const frame = (now: number) => {
@@ -125,6 +148,8 @@ const AmbientField = ({ phase }: Props) => {
         gl.uniform1f(uFlight, flight)
         gl.uniform1f(uResolve, resolve)
         gl.uniform2f(uPointer, pointer.x, pointer.y)
+        gl.uniform2f(uMouse, mouse.x, mouse.y)
+        gl.uniform1f(uHasMouse, mouse.on)
         gl.drawArrays(gl.TRIANGLES, 0, 3)
         dirty = false
       }
@@ -133,12 +158,14 @@ const AmbientField = ({ phase }: Props) => {
     }
 
     window.addEventListener('pointermove', onPointerMove, { passive: true })
+    document.addEventListener('pointerleave', onPointerLeave)
     raf = requestAnimationFrame(frame)
 
     // sem soltar o contexto o strict mode deixa dois canvas vivos no dev
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('pointermove', onPointerMove)
+      document.removeEventListener('pointerleave', onPointerLeave)
       gl.deleteVertexArray(vao)
       gl.deleteProgram(program)
       gl.getExtension('WEBGL_lose_context')?.loseContext()

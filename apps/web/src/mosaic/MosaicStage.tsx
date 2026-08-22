@@ -17,9 +17,6 @@ const MosaicStage = () => {
       className="pointer-events-none fixed inset-0 z-10 transition-opacity duration-1000"
       style={{ opacity: shown ? 1 : 0 }}
     >
-      <p className="absolute bottom-6 left-6 font-mono text-[10px] uppercase tracking-[0.3em] text-bone/35 md:bottom-8 md:left-10">
-        acervo 001 / 25.000 capas
-      </p>
     </div>
   )
 }

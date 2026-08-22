@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useReducedMotion } from '@/src/hooks/useReducedMotion'
+import { useLocale } from '@/src/i18n/LocaleProvider'
+import LocaleToggle from '@/src/i18n/LocaleToggle'
 import GameShelf from './GameShelf'
 
 // painel da intro. não é rota separada, fica em cima do canvas que já tá rodando.
@@ -19,6 +21,7 @@ const GITHUB_URL = 'https://github.com/Pedroaruana/Nothing-to-Play'
 
 const IntroScreen = ({ onEnter, onDone }: Props) => {
   const reduced = useReducedMotion()
+  const { t } = useLocale()
   const [ready, setReady] = useState(false)
   const [leaving, setLeaving] = useState(false)
 
@@ -70,17 +73,21 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
         style={{ ...easing, opacity: shown ? 1 : 0, transform: shown ? 'none' : 'translateY(-8px)' }}
       >
         <span className="text-bone/70">ntp</span>
-        <a
-          href={GITHUB_URL}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Repositório do projeto no GitHub"
-          className="text-bone/45 transition-colors duration-300 hover:text-bone focus-visible:outline-none focus-visible:text-bone"
-        >
-          <svg viewBox="0 0 16 16" className="size-[18px]" fill="currentColor" aria-hidden>
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-          </svg>
-        </a>
+
+        <div className="flex items-center gap-4">
+          <LocaleToggle />
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={t.githubLabel}
+            className="text-bone/45 transition-colors duration-300 hover:text-bone focus-visible:outline-none focus-visible:text-bone"
+          >
+            <svg viewBox="0 0 16 16" className="size-[18px]" fill="currentColor" aria-hidden>
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+          </a>
+        </div>
       </header>
 
       {/* translúcido de propósito, o corredor de placas continua aparecendo atrás */}
@@ -101,16 +108,18 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
 
         <div className="grid gap-10 px-6 py-9 md:grid-cols-12 md:items-end md:gap-12 md:px-10 md:py-11">
           <div className="md:col-span-7">
-            {/* cada linha sobe de dentro da máscara com atraso diferente */}
+            {/* cada linha sobe de dentro da máscara com atraso diferente.
+                o pb na máscara é pra perna do "g" não ser cortada, e o -mb
+                devolve o espaço pra entrelinha continuar a mesma */}
             <h1 className="font-display text-[clamp(2.6rem,8.5vw,7rem)] font-medium leading-[0.86] tracking-[-0.045em]">
-              {['Nothing', 'to Play'].map((line, index) => (
-                <span key={line} className="block overflow-hidden">
+              {t.title.map((line, index) => (
+                <span key={line} className="-mb-[0.18em] block overflow-hidden pb-[0.18em]">
                   <span
                     className="block transition-transform duration-[900ms]"
                     style={{
                       ...easing,
                       transitionDelay: shown ? `${180 + index * 110}ms` : '0ms',
-                      transform: shown ? 'none' : 'translateY(105%)'
+                      transform: shown ? 'none' : 'translateY(125%)'
                     }}
                   >
                     {line}
@@ -129,7 +138,7 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
                 transform: shown ? 'none' : 'translateY(10px)'
               }}
             >
-              Você tem centenas de jogos instalados e mesmo assim acha que não tem nada pra jogar.
+              {t.lede}
             </p>
           </div>
 
@@ -156,7 +165,7 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
                   className="absolute inset-0 origin-bottom scale-y-0 bg-bone transition-transform duration-500 group-hover:scale-y-100"
                   style={easing}
                 />
-                <span className="relative">entrar no acervo</span>
+                <span className="relative">{t.enter}</span>
                 <svg
                   aria-hidden
                   viewBox="0 0 24 24"
@@ -170,7 +179,7 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
               </button>
 
               <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.26em] text-bone/20">
-                ou pressione enter
+                {t.hint}
               </p>
             </div>
           </div>

@@ -16,7 +16,9 @@ uniform vec2 u_res;
 uniform float u_time;    // tempo contínuo, alimenta ondas, reflexo e lâmpada
 uniform float u_flight;  // distância percorrida, acumulada na CPU
 uniform float u_resolve; // 0 = intro, 1 = câmera mergulhando no acervo
-uniform vec2 u_pointer;
+uniform vec2 u_pointer;  // ponteiro suavizado, só pro parallax
+uniform vec2 u_mouse;    // ponteiro cru no mesmo espaço do uv, pra seleção
+uniform float u_hasMouse;
 
 out vec4 fragColor;
 
@@ -82,14 +84,12 @@ float plaqueDetail(vec2 luv, float seed, float t) {
   return g;
 }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / u_res.y;
-
-  // roll lento, tira qualquer sensação de imagem parada
+// mesma deformação de câmera pro fragmento e pro cursor, senão a seleção sai torta
+vec2 warp(vec2 v) {
   float roll = sin(u_time * 0.055) * 0.04 * (1.0 - u_resolve * 0.75);
   float cs = cos(roll);
   float sn = sin(roll);
-  vec2 sp = mat2(cs, -sn, sn, cs) * uv;
+  vec2 sp = mat2(cs, -sn, sn, cs) * v;
 
   // curvatura de lente: as bordas afundam, o centro avança
   sp *= 1.0 + mix(0.30, 0.12, u_resolve) * dot(sp, sp);
@@ -97,11 +97,33 @@ void main() {
   // deriva lateral da câmera + parallax do ponteiro
   sp += vec2(sin(u_time * 0.11) * 0.05, cos(u_time * 0.083) * 0.035);
   sp += u_pointer * 0.06;
+  return sp;
+}
+
+float layerT(int r, float phase) {
+  return (phase + float(r)) / float(LAYERS);
+}
+
+float layerFade(float t) {
+  // some antes de bater na câmera, senão a camada da frente cobre a tela toda
+  return smoothstep(0.0, 0.16, t) * (1.0 - smoothstep(0.52, 0.95, t));
+}
+
+vec2 layerOffset(float cycle, int r) {
+  // id fixo da camada, senão pisca toda vez que dá a volta
+  float layerId = cycle - float(r);
+  return hash22(vec2(layerId, layerId * 1.7 + 3.1)) * 31.0;
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / u_res.y;
+  vec2 sp = warp(uv);
+  vec2 sm = warp(u_mouse);
 
   // fundo quase preto com uma respiração de luz no centro
   float glow = 1.0 - smoothstep(0.0, 1.0, length(uv));
   float breath = 0.70 + 0.30 * sin(u_time * 0.37);
-  vec3 col = mix(vec3(0.012, 0.013, 0.017), vec3(0.058, 0.062, 0.078), glow * breath);
+  vec3 col = mix(vec3(0.012, 0.013, 0.017), vec3(0.055, 0.058, 0.072), glow * breath);
 
   // lâmpada viajando pelo mural, acende as placas por onde passa
   vec2 lamp = vec2(sin(u_time * 0.19) * 3.2, cos(u_time * 0.147) * 2.1);
@@ -112,21 +134,39 @@ void main() {
   float cycle = floor(u_flight * steps);
   float phase = fract(u_flight * steps);
 
-  for (int r = 0; r < LAYERS; r++) {
-    float fr = float(r);
+  // passada só pra achar a placa sob o cursor. como o loop vai do fundo pra
+  // frente, o último acerto é o da camada mais próxima, que é a que o olho vê
+  float hoverLayer = -1.0;
+  vec2 hoverCell = vec2(0.0);
 
-    // t sobe do fundo (0) até dissolver perto da câmera, sempre ordenado por r
-    float t = (phase + fr) / steps;
-    // some antes de bater na câmera, senão a camada da frente cobre a tela toda
-    float fade = smoothstep(0.0, 0.16, t) * (1.0 - smoothstep(0.52, 0.95, t));
+  if (u_hasMouse > 0.5) {
+    for (int r = 0; r < LAYERS; r++) {
+      float t = layerT(r, phase);
+
+      // placa muito apagada não deve ser selecionável
+      if (layerFade(t) <= 0.3) continue;
+
+      float z = mix(FAR, NEAR, pow(t, 1.35));
+      vec2 pm = sm * z + layerOffset(cycle, r);
+      vec2 gm = pm / CELL;
+      vec2 fm = (fract(gm) - 0.5) * CELL;
+
+      // dentro da placa, descontando o vão entre elas
+      if (all(lessThan(abs(fm), CELL * 0.5 - 0.035))) {
+        hoverLayer = float(r);
+        hoverCell = floor(gm);
+      }
+    }
+  }
+
+  for (int r = 0; r < LAYERS; r++) {
+    float t = layerT(r, phase);
+    float fade = layerFade(t);
 
     // é igual pra todo pixel, então pode sair antes do fwidth lá embaixo
     if (fade <= 0.002) continue;
 
-    // id fixo da camada, senão pisca toda vez que dá a volta
-    float layerId = cycle - fr;
-    vec2 off = hash22(vec2(layerId, layerId * 1.7 + 3.1)) * 31.0;
-
+    vec2 off = layerOffset(cycle, r);
     float z = mix(FAR, NEAR, pow(t, 1.35));
     vec2 p = sp * z + off;
 
@@ -136,8 +176,10 @@ void main() {
     vec2 luv = vec2(cellUv.x, 1.0 - cellUv.y);
     vec2 f = (cellUv - 0.5) * CELL;
 
-    // a placa nasce menor e assenta conforme se aproxima
-    float grow = mix(0.86, 1.0, smoothstep(0.0, 0.35, t));
+    float hit = float(r) == hoverLayer && all(equal(id, hoverCell)) ? 1.0 : 0.0;
+
+    // a placa nasce menor e assenta conforme se aproxima. a selecionada incha um pouco
+    float grow = mix(0.86, 1.0, smoothstep(0.0, 0.35, t)) * (1.0 + 0.07 * hit);
     float gut = mix(0.030, 0.016, u_resolve);
     float sd = roundedBox(f, CELL * 0.5 * grow - gut, 0.012);
 
@@ -159,10 +201,25 @@ void main() {
     lum += lit * (0.045 + 0.30 * rare);
     lum += blink * 0.22;
     lum *= plaqueDetail(luv, seed, u_time);
+
+    // halo em volta do cursor: as vizinhas também acendem um pouco, dá profundidade
+    vec2 pm = sm * z + off;
+    float dm = length((id + 0.5) * CELL - pm);
+    lum += exp(-dm * dm * 5.0) * 0.09 * u_hasMouse;
+
     lum *= mix(0.22, 1.05, t); // névoa: o fundo escurece
     lum *= mix(0.90, 1.55, u_resolve);
 
-    col = mix(col, vec3(lum) * tintFor(seed), mask * fade);
+    // selecionada: acende, ganha contorno e perde a cor pro branco
+    float ring = smoothstep(0.012, 0.0, abs(sd)) * hit;
+    lum = mix(lum, lum * 2.6 + 0.16, hit);
+    lum += ring * 0.5;
+
+    // frio no fundo, quente na frente
+    vec3 tint = mix(vec3(0.84, 0.89, 1.0), vec3(1.0, 0.96, 0.90), t);
+    tint = mix(tint, vec3(1.0), hit * 0.7);
+
+    col = mix(col, vec3(lum) * tint, clamp(mask + ring, 0.0, 1.0) * fade);
   }
 
   // brilho fraco nas áreas já claras, no lugar de um bloom caro
