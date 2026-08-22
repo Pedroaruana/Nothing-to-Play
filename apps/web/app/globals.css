@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* tokens do projeto. no tailwind v4 as classes saem daqui mesmo,
+   então bg-void e text-bone funcionam sem arquivo de config */
+@theme {
+  --color-void: #08080a;
+  --color-bone: #ece9e3;
+
+  --font-display: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* curva de saída usada nas transições da intro */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  overscroll-behavior: none;
+}
+
+/* faixa de luz que percorre a borda do painel da intro */
+@keyframes sweep {
+  0% {
+    transform: translateX(-45%);
+    opacity: 0;
+  }
+  20%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(145%);
+    opacity: 0;
+  }
+}
+
+/* estante correndo em loop: o trilho tem a lista duplicada, então -50% emenda sozinho */
+@keyframes shelf {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+::selection {
+  background: var(--color-bone);
+  color: var(--color-void);
+}
+
+/* respeita quem pediu menos movimento: corta transições, o canvas trata o resto */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

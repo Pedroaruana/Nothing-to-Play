@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "tools/*"
+
+# sharp precisa rodar o script de instalação (binário nativo)
+allowBuilds:
+  sharp: true
