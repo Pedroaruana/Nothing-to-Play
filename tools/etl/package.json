@@ -1,0 +1,18 @@
+{
+  "name": "etl",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch": "node --env-file=../../.env src/fetch-games.ts",
+    "atlas": "node src/build-atlas.ts",
+    "db": "node src/build-db.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "sharp": "^0.34.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

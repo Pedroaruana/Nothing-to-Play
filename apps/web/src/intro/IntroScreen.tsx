@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from '@/src/hooks/useReducedMotion'
 import { useLocale } from '@/src/i18n/LocaleProvider'
 import LocaleToggle from '@/src/i18n/LocaleToggle'
@@ -24,6 +24,7 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
   const { t } = useLocale()
   const [ready, setReady] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const leavingRef = useRef(false)
 
   // dispara a entrada só depois da primeira pintura, senão o stagger não aparece
   useEffect(() => {
@@ -31,13 +32,14 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  // updater funcional pra clique e tecla não dispararem a saída duas vezes
+  // trava em ref: clique e tecla podem chegar juntos, e avisar o pai de dentro
+  // do updater dispararia setState do Home no meio do render da intro
   const enter = useCallback(() => {
-    setLeaving((current) => {
-      if (current) return current
-      onEnter()
-      return true
-    })
+    if (leavingRef.current) return
+
+    leavingRef.current = true
+    setLeaving(true)
+    onEnter()
   }, [onEnter])
 
   // quem cronometra a saída é o painel, o fundo só recebe o aviso e mergulha junto
