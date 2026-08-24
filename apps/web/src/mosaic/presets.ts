@@ -6,7 +6,11 @@ export type PresetId = 'minimal' | 'depth' | 'chaos'
 
 const BASE: Look = {
   jitter: 0,
-  roundness: 0.3,
+  // EDGE_BORDER_ROUNDNESS_BASE deles, que bate com a nossa escala de mundo
+  roundness: 0.155,
+  // EDGE_BORDER_THICKNESS_BASE é 0.075, mas lá ele ainda multiplica por
+  // borderThicknessScale, que vale 0.1 com EDGE_CELL_SCALING_BORDER_THICKNESS
+  // desligado. usar 0.075 aqui deixa a borda dez vezes mais grossa que a deles
   border: 0.055,
   mediaScale: 1.12,
   // quase zero: no diagrama de potência, peso diferente é tamanho diferente, e
@@ -21,6 +25,7 @@ const BASE: Look = {
   dof: 0.7,
   mediaDome: 0.2,
   darkFar: 0.2,
+  // leva o campo pra escala de tela que o pós espera, a mesma do original
   edgeNorm: 0.2,
   edgeScale: 1,
   relief: 0.65,

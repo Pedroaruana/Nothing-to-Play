@@ -73,28 +73,32 @@ vec3 envMap(vec3 rd) {
   return mix(col, col.zyx, noise3(rd * 2.0));
 }
 
-// altura da almofada a partir do campo de distância
+// altura da almofada a partir do campo de distância.
+//
+// port literal do hm() do post-depth.frag deles, incluindo o 51.5 e a
+// depressão exponencial. o miolo da célula afundar até o nível da base NÃO é
+// defeito: é o que deixa a capa no fundo de uma moldura em relevo. já tentei
+// "corrigir" isso e o que eu fiz foi achatar o relevo inteiro
 float heightAt(vec2 uv) {
   float raw = texture(u_height, uv).r;
 
-  // abaixo deste limiar é vão entre células, acima é a capa
-  // limiar entre moldura e capa, na escala do meu campo
-  objId = smoothstep(0.006, 0.014, raw);
+  objId = smoothstep(0.02, 0.0225, raw);
 
   float h = raw * 51.5 * u_edgeScale;
   float maxHeight = u_relief;
 
-  // topo achatado: sobe rápido e satura
-  float flattened = maxHeight * (1.0 - exp(-h * 8.0));
+  const float decay = 8.0;
+  const float depressionDecay = 2.0;
+  const float depressionBlendWidth = 0.5;
+  float depressionStart = maxHeight * 1.3;
 
-  // e afunda de leve no meio, o que dá o formato de almofada
-  float start = maxHeight * 1.3;
+  float flattened = maxHeight * (1.0 - exp(-h * decay));
   float depression = 0.0;
 
-  if (h > start) {
-    float over = max(0.0, h - start);
-    float blend = smoothstep(start, start + 0.5, h);
-    depression = maxHeight * (1.0 - exp(-over * 2.0)) * blend;
+  if (h > depressionStart) {
+    float adjusted = max(0.0, h - depressionStart);
+    float blend = smoothstep(depressionStart, depressionStart + depressionBlendWidth, h);
+    depression = maxHeight * (1.0 - exp(-adjusted * depressionDecay)) * blend;
   }
 
   return flattened - depression;
@@ -160,9 +164,7 @@ void main() {
       step = 0.0;
       break;
     }
-    // teto no passo: sem ele o raio ultrapassa a superfície e para longe,
-    // e pixels vizinhos acabam lendo pedaços distantes da imagem
-    step = clamp(d * 0.28 * rmMod, -0.06, 0.06);
+    step = d * 0.28 * rmMod;
   }
 
   if (step > 0.0) {
@@ -174,17 +176,12 @@ void main() {
   float hitId = objId;
   float hitHeight = lastHeight;
 
-  // raio que não convergiu aponta pra lugar nenhum: amostrar ali produz aquele
-  // borrão esticado. nesse caso volta pra projeção plana do próprio pixel
-  float converged = 1.0 - smoothstep(0.02, 0.12, last);
-  vec2 flatUv = gl_FragCoord.xy / u_res;
+  // a capa é lida no ponto de impacto do raio, direto, como no original.
+  // limitar esse desvio e misturar por um fator de convergência era o que
+  // produzia o buraco: no centro o raio não converge, o fator caía a zero e
+  // o pixel ia parar no ramo de moldura, multiplicado por pow(0.02, 0.8) * 1.6
+  vec2 uv = toUv(p);
 
-  // o desvio da amostra é limitado: a refração do vidro é sutil, e sem esse
-  // teto um raio perdido lê o outro lado da tela e vira chuvisco
-  vec2 offset = clamp(toUv(p) - flatUv, vec2(-0.006), vec2(0.006));
-  vec2 uv = clamp(flatUv + offset * converged, 0.0, 1.0);
-
-  // a capa é lida no ponto de impacto, e é isso que entorta a imagem como vidro
   vec3 frame = vec3(0.05);
   vec3 media = hitId > 0.0 ? texture(u_color, uv).rgb : vec3(0.0);
   vec3 c = mix(frame, media, hitId);
@@ -217,9 +214,6 @@ void main() {
 
   float ambience = length(sin(n * 2.0) * 0.5 + 0.5) / sqrt(3.0) * smoothstep(-1.0, 1.0, -n.z) * 1.5;
   c = pow(max(c * ambience, 0.0), vec3(1.0 / 1.3));
-
-  // onde o raio falhou, entrega a cor chapada em vez de geometria inventada
-  c = mix(texture(u_color, flatUv).rgb * 0.85, c, converged);
 
   fragColor = vec4(c, 1.0);
 }

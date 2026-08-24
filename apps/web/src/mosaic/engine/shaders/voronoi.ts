@@ -69,6 +69,15 @@ out vec4 fragColor;
 
 const vec2 COVER = vec2(32.0 / 45.0, 1.0);
 
+// altura sobre largura da capa. o original trava isso em 1.5, que é pôster de
+// filme; capa de jogo é mais quadrada e a nossa célula do atlas é 32x45
+const float MEDIA_ASPECT = 45.0 / 32.0;
+
+// quanto a diferença de peso desloca o meio entre duas células, na conta da
+// caixa da capa. no original é WEIGHT_OFFSET_SCALE_MEDIA_MOD sobre a escala de
+// peso; aqui o peso já vem normalizado, então é um fator direto
+const float MEDIA_MID_SCALE = 0.08;
+
 float dot2(vec2 v) {
   return dot(v, v);
 }
@@ -92,6 +101,19 @@ float noise21(vec2 p) {
   float c = hash11(dot(i + vec2(0.0, 1.0), vec2(1.0, 57.0)));
   float d = hash11(dot(i + vec2(1.0, 1.0), vec2(1.0, 57.0)));
   return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+// a uv da capa nunca é cortada: o que estoura a caixa volta espelhado, então a
+// célula aparece sempre cheia. é o MEDIA_BBOX_OVERFLOW_MODE 3 do original.
+// pintar cor chapada fora da caixa, que era o que fazíamos, lê como moldura
+// vazia e é o que dava a impressão da capa não caber no card
+vec2 mirroredTile(vec2 uv, float shrink) {
+  vec2 tiled = fract(uv);
+  vec2 shrunk = tiled * (1.0 - shrink) + shrink * 0.5;
+  vec2 flipped = 1.0 - shrunk;
+  vec2 shouldFlip = mod(floor(uv), 2.0);
+
+  return mix(shrunk, flipped, shouldFlip);
 }
 
 // mínimo suave: é ele que arredonda o canto onde duas fronteiras se encontram
@@ -289,9 +311,15 @@ void main() {
         near2 = len;
       }
 
-      // a caixa da capa usa só as oito vizinhas coladas
+      // a caixa da capa usa só as oito vizinhas coladas.
+      //
+      // aqui o ponto médio é o do original: diferença direta de peso, sem
+      // dividir pela distância ao quadrado. dividir faz o deslizamento explodir
+      // quando as células estão coladas, e é o que deformava a caixa da capa
+      // em toda a vizinhança do cursor
       if (abs(dx) <= 1 && abs(dy) <= 1) {
-        vec2 midFlat = mid / sc;
+        float midFactor = 0.5 + (bestOffset - offset) * MEDIA_MID_SCALE;
+        vec2 midFlat = mix(bestCenter, center, clamp(midFactor, 0.05, 0.95));
         midSum += midFlat;
         bbMin = min(bbMin, midFlat);
         bbMax = max(bbMax, midFlat);
@@ -332,10 +360,15 @@ void main() {
   float edge = max(rawEdge, 0.0);
   float aa = fwidth(edge) + 1e-6;
 
+  // caixa da capa. o original tira o tamanho do MAIOR lado com o aspecto
+  // travado, o que faz a capa cobrir a célula; nós usávamos o menor, que é
+  // "caber dentro" e deixa sobra dos dois lados
   vec2 avg = midSum / max(used, 1.0);
-  vec2 box = max(bbMax - bbMin - u_border, vec2(0.001));
-  float fit = min(box.x / COVER.x, box.y / COVER.y) * u_mediaScale;
-  vec2 uv = (p - avg) / (COVER * fit) + 0.5;
+  float bbX = max((bbMax.x - bbMin.x) - u_border, 0.001);
+  float bbY = max((bbMax.y - bbMin.y) - u_border, 0.001);
+  float bbSide = max(bbX, bbY / MEDIA_ASPECT);
+  vec2 halfBox = 0.5 * u_mediaScale * vec2(bbSide, bbSide * MEDIA_ASPECT);
+  vec2 uv = (p - avg) / (2.0 * halfBox) + 0.5;
 
   vec4 meta = metaOf(bestIndex);
   vec3 media = meta.rgb;
@@ -344,9 +377,11 @@ void main() {
   int page = bestIndex / perPage;
   bool isFocus = bestIndex == u_focus;
 
-  bool onMedia = uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0;
+  // fora da caixa não existe mais: a uv volta espelhada e a célula fica cheia
+  bool onMedia = true;
+  uv = mirroredTile(uv, 0.01);
 
-  if (onMedia) {
+  {
     // o item em foco usa a capa grande; o resto vem do atlas de 32x45
     float layer = cellData(wrapCell(bestCell)).w;
 

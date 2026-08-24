@@ -58,7 +58,8 @@ export type Renderer = {
   /** roda o mesmo shader num pixel só, num ponto de mundo já sem lente */
   pick: (frame: Frame, worldX: number, worldY: number) => number
   uploadCells: (positions: Float32Array, weights: Float32Array, layers: Float32Array) => void
-  uploadNeighbor: (layer: number, bitmap: ImageBitmap) => void
+  /** false quando o bitmap não bate com a camada, aí a célula não deve apontar pra ela */
+  uploadNeighbor: (layer: number, bitmap: ImageBitmap) => boolean
   neighborLayers: number
   uploadPage: (page: number, bitmap: ImageBitmap) => void
   allPagesReady: () => void
@@ -137,7 +138,11 @@ export const createRenderer = (
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 
+  // unidade própria: sem o activeTexture ela cai na unidade que sobrou do bind
+  // anterior, a 2, que é a do u_hires. aí um sampler2D float acaba lendo uma
+  // textura de inteiro sem sinal e o driver descarta o draw inteiro
   const pickTexture = gl.createTexture()
+  gl.activeTexture(gl.TEXTURE7)
   gl.bindTexture(gl.TEXTURE_2D, pickTexture)
   gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R32UI, 1, 1)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
@@ -310,8 +315,11 @@ export const createRenderer = (
       resizeScene(canvas.width, canvas.height)
       gl.bindVertexArray(vao)
 
-      // sem pós: o mosaico vai direto pra tela, útil pra isolar de quem é o defeito
-      if (!postOn) {
+      // preset sem relevo não passa pelo raymarching: lá o minimal cai no
+      // post-default, que é um passthrough de uma linha. rodar o pós com
+      // relief 0 deixa a altura zerada, e o ramo de moldura multiplica a cor
+      // por pow(0.02, 0.8) * 1.6, o que apaga metade da tela
+      if (!postOn || frame.look.relief <= 0.0) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         gl.drawBuffers([gl.BACK])
         gl.viewport(0, 0, canvas.width, canvas.height)
@@ -324,6 +332,12 @@ export const createRenderer = (
       gl.bindFramebuffer(gl.FRAMEBUFFER, sceneBuffer)
       gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1])
       gl.viewport(0, 0, canvas.width, canvas.height)
+
+      // limpa antes de desenhar: sem isso um quadro que falhe deixa o conteúdo
+      // do quadro anterior no alvo, e o que aparece na tela é resto velho
+      gl.clearColor(0, 0, 0, 1)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+
       setup(drawProgram, frame, canvas.width, canvas.height, frame.camX, frame.camY, 1)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
 
@@ -363,6 +377,13 @@ export const createRenderer = (
     neighborLayers: NEIGHBOR_LAYERS,
 
     uploadNeighbor: (layer, bitmap) => {
+      // a camada tem tamanho fixo. bitmap de outro tamanho faz o driver recusar
+      // o upload inteiro e a camada continua preta, então nem tenta
+      if (bitmap.width !== NEIGHBOR_W || bitmap.height !== NEIGHBOR_H) {
+        bitmap.close()
+        return false
+      }
+
       gl.activeTexture(gl.TEXTURE6)
       gl.bindTexture(gl.TEXTURE_2D_ARRAY, neighbors)
       gl.texSubImage3D(
@@ -372,6 +393,7 @@ export const createRenderer = (
         gl.RGBA, gl.UNSIGNED_BYTE, bitmap
       )
       bitmap.close()
+      return true
     },
 
     uploadCells: (positions, weights, layers) => {
