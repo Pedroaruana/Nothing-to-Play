@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# um push logo depois do outro cancela a checagem anterior, que já não interessa
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # o sharp compila binário nativo, e o allowBuilds do pnpm-workspace
+      # é o que autoriza o script de instalação dele a rodar
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      # o build não precisa dos assets do etl: as páginas são estáticas e
+      # o atlas só é buscado em runtime, no navegador
+      - run: pnpm build
