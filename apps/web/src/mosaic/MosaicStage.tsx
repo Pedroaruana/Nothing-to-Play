@@ -7,6 +7,7 @@ import { gameOfSlot } from './engine/layout'
 import { loadManifest, type Manifest } from './engine/manifest'
 import { createRenderer, type Look, type Renderer } from './engine/renderer'
 import FocusCard from './FocusCard'
+import GameCard from './GameCard'
 import MosaicHud from './MosaicHud'
 import { PRESETS, type PresetId } from './presets'
 import { createSimulation, type Simulation } from './engine/simulation'
@@ -15,8 +16,17 @@ const ATLAS = '/atlas'
 const IGDB_COVER = 'https://images.igdb.com/igdb/image/upload/t_cover_big_2x'
 const IGDB_COVER_BIG = 'https://images.igdb.com/igdb/image/upload/t_cover_big'
 
-// nível de alta resolução da vizinhança do foco, desligado enquanto investigo
-const NEIGHBOR_TIER = false
+// nível de alta resolução da vizinhança do foco
+const NEIGHBOR_TIER = true
+
+// a igdb entrega t_cover_big em 264x352 e t_cover_big_2x em 528x704, ou seja
+// 0.75, enquanto a célula do mosaico é 32x45, que dá 0.711. subir a capa crua
+// deixava a vizinha esticada em relação ao atlas, e no caso da textura array
+// pior: a camada é 264x374 e o upload pedia 374 linhas de um bitmap de 352,
+// o texSubImage3D falhava e a camada ficava preta. reamostrar na hora de
+// decodificar resolve os dois de uma vez
+const NEIGHBOR_SIZE = { resizeWidth: 264, resizeHeight: 374, resizeQuality: 'high' } as const
+const HIRES_SIZE = { resizeWidth: 512, resizeHeight: 720, resizeQuality: 'high' } as const
 const DPR_CAP = 1.5
 
 const ENTRY_ZOOM = 26
@@ -70,6 +80,7 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
   const [loaded, setLoaded] = useState(0)
   const [pages, setPages] = useState(0)
   const [names, setNames] = useState<string[] | null>(null)
+  const [coverIds, setCoverIds] = useState<string[] | null>(null)
   const [focus, setFocus] = useState(-1)
   const [selected, setSelected] = useState(-1)
   const closeRef = useRef<() => void>(() => {})
@@ -141,7 +152,7 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
 
     // a capa em foco é buscada em 528x748 no cdn da igdb. o atlas de 32x45
     // serve pro mosaico e não serve pro destaque, ali a nitidez aparece
-    const loadHires = async (index: number) => {
+    const loadHires = async (index: number, signal: AbortSignal) => {
       if (!renderer || !covers) return
 
       const token = ++hiresToken
@@ -149,10 +160,10 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
       if (!imageId) return
 
       try {
-        const res = await fetch(`${IGDB_COVER}/${imageId}.jpg`)
+        const res = await fetch(`${IGDB_COVER}/${imageId}.jpg`, { signal })
         if (!res.ok) return
 
-        const bitmap = await createImageBitmap(await res.blob())
+        const bitmap = await createImageBitmap(await res.blob(), HIRES_SIZE)
         if (!alive || token !== hiresToken || !renderer) {
           bitmap.close()
           return
@@ -164,11 +175,33 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
       }
     }
 
+    // buscar a capa grande a cada célula que passa sob o cursor derruba o
+    // quadro: é uma requisição pro foco mais 25 da vizinhança, cada uma com
+    // decode e upload de textura. arrastando o mouse isso vira centena de
+    // pedidos por segundo e a fila cresce mais rápido do que a rede entrega.
+    // então o tier só entra quando o ponteiro descansa, e o que ficou em voo
+    // é abortado na próxima mudança de foco
+    const TIER_DELAY = 140
+
+    let tierTimer = 0
+    let tierAbort: AbortController | null = null
+
+    const scheduleTier = (game: number, slot: number) => {
+      clearTimeout(tierTimer)
+      tierAbort?.abort()
+      tierAbort = null
+
+      tierTimer = window.setTimeout(() => {
+        tierAbort = new AbortController()
+        const signal = tierAbort.signal
+        void loadHires(game, signal)
+        void loadNeighbors(slot, signal)
+      }, TIER_DELAY)
+    }
+
     // as células em volta do foco sobem pra 264x374. sem isso, ao aproximar
     // elas continuam nos 32x45 do atlas e ficam visivelmente borradas
-    const loadNeighbors = async (centerSlot: number) => {
-      // DESLIGADO: este recurso é o suspeito do anel preto em volta do foco.
-      // fica fora até eu provar por medição que não é ele
+    const loadNeighbors = async (centerSlot: number, signal: AbortSignal) => {
       if (!NEIGHBOR_TIER) return
       if (!renderer || !sim || !covers || !layers || centerSlot < 0) return
 
@@ -195,16 +228,18 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
 
           void (async () => {
             try {
-              const res = await fetch(`${IGDB_COVER_BIG}/${imageId}.jpg`)
+              const res = await fetch(`${IGDB_COVER_BIG}/${imageId}.jpg`, { signal })
               if (!res.ok) return
 
-              const bitmap = await createImageBitmap(await res.blob())
+              const bitmap = await createImageBitmap(await res.blob(), NEIGHBOR_SIZE)
               if (!alive || token !== neighborToken || !renderer || !layers) {
                 bitmap.close()
                 return
               }
 
-              renderer.uploadNeighbor(mine, bitmap)
+              // se o upload recusar o bitmap a camada fica preta, e apontar a
+              // célula pra ela é o que produzia o anel escuro em volta do foco
+              if (!renderer.uploadNeighbor(mine, bitmap)) return
 
               // a célula só passa a apontar pra camada DEPOIS que a imagem
               // chegou. marcar antes faz o shader ler textura vazia, que é preta
@@ -249,21 +284,45 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
       drag.active = false
 
+      if (drag.moved || !renderer || !sim || !manifest) return
+
       // clique sem arrastar traz a célula pro centro e entra em modo seleção
-      if (!drag.moved && renderer && sim) {
-        const point = toCanvas(event.clientX, event.clientY)
-        const raw = worldAt(point.x, point.y, camera, renderer.size())
-        const world = lensWorld(raw.x, raw.y, camera.x, camera.y, camera.zoom * LENS_SPAN)
+      const point = toCanvas(event.clientX, event.clientY)
+      const raw = worldAt(point.x, point.y, camera, renderer.size())
+      const world = lensWorld(raw.x, raw.y, camera.x, camera.y, camera.zoom * LENS_SPAN)
+      const slot = sim.slotAt(world.x, world.y)
 
-        target.x = world.x
-        target.y = world.y
-        target.active = true
-
-        if (selectedSlot < 0) zoomBefore = camera.zoom
-        selectedSlot = sim.slotAt(world.x, world.y)
-        selectAt = performance.now()
-        setSelected(focused)
+      // clicar de novo na capa já aberta fecha
+      if (selectedSlot >= 0 && slot === selectedSlot) {
+        closeRef.current()
+        return
       }
+
+      target.x = world.x
+      target.y = world.y
+      target.active = true
+
+      // o zoom de volta só é guardado ao sair do modo livre. capturar o zoom
+      // corrente a cada clique fazia cada troca de jogo encolher o acervo mais
+      // um pouco, porque o valor lido no meio da transição virava o novo teto
+      if (selectedSlot < 0) {
+        zoomBefore = camera.zoom
+        selectAt = performance.now()
+      }
+
+      selectedSlot = slot
+
+      // com o foco travado, `focused` ainda é o jogo anterior. usar ele aqui
+      // abria o cartão do jogo errado ao trocar de capa
+      const escolhido = gameOfSlot(slot, sim.cols, sim.rows, manifest.count)
+      focused = escolhido
+      setFocus(escolhido)
+      setSelected(escolhido)
+
+      // o laço só pede a capa grande quando percebe o foco mudar, e aqui ele
+      // acabou de ser trocado na mão. sem isto o destaque fica com a capa do
+      // jogo anterior até o ponteiro mexer
+      scheduleTier(escolhido, slot)
     }
 
     const onWheel = (event: WheelEvent) => {
@@ -354,8 +413,11 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
       // a simulação roda antes do desenho. o foco é a célula sob o ponteiro e
       // o empurrão sai dela com raio igual à diagonal da tela, como no original
       if (sim && manifest) {
+        // com um jogo aberto o foco trava nele: mexer o mouse não troca mais a
+        // célula em destaque, e a simulação continua empurrando a partir dela.
+        // só sai clicando fora ou em fechar
         const aim = pointer.inside ? worldAt(pointer.px, pointer.py, camera, size) : camera
-        const slot = sim.slotAt(aim.x, aim.y)
+        const slot = selectedSlot >= 0 ? selectedSlot : sim.slotAt(aim.x, aim.y)
         focusCol = slot % sim.cols
         focusRow = (slot - focusCol) / sim.cols
 
@@ -373,18 +435,20 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
         if (game !== focused) {
           focused = game
           setFocus(game)
-          void loadHires(game)
-          void loadNeighbors(slot)
+          scheduleTier(game, slot)
 
-          // o cartão fica embaixo e à esquerda da capa em foco, como na referência
-          const rect = canvas.getBoundingClientRect()
-          const ratio = rect.width / Math.max(size.width, 1)
+          // o cartão fica embaixo e à esquerda da capa em foco, como na
+          // referência. com um jogo aberto ele não persegue mais o ponteiro
+          if (selectedSlot < 0) {
+            const rect = canvas.getBoundingClientRect()
+            const ratio = rect.width / Math.max(size.width, 1)
 
-          // mantém o cartão inteiro dentro da tela
-          setFocusPoint({
-            x: Math.min(rect.width - 24, Math.max(300, pointer.px * ratio - 40)),
-            y: Math.min(rect.height - 120, Math.max(120, pointer.py * ratio + 90))
-          })
+            // mantém o cartão inteiro dentro da tela
+            setFocusPoint({
+              x: Math.min(rect.width - 24, Math.max(300, pointer.px * ratio - 40)),
+              y: Math.min(rect.height - 120, Math.max(120, pointer.py * ratio + 90))
+            })
+          }
         }
 
         state.focus = focused
@@ -478,7 +542,10 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
 
         const taxRes = await fetch(`${ATLAS}/taxonomy.json`)
         if (alive && taxRes.ok) setTaxonomy((await taxRes.json()) as { genres: { bit: number; label: string }[] })
-        if (coversRes.ok) covers = (await coversRes.json()) as string[]
+        if (coversRes.ok) {
+          covers = (await coversRes.json()) as string[]
+          setCoverIds(covers)
+        }
       } catch (error) {
         if (process.env.NODE_ENV !== 'production') console.error('[mosaico]', error)
         setFailed(true)
@@ -500,6 +567,8 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
     return () => {
       alive = false
       cancelAnimationFrame(raf)
+      clearTimeout(tierTimer)
+      tierAbort?.abort()
       canvas.removeEventListener('pointerdown', onPointerDown)
       canvas.removeEventListener('pointermove', onPointerMove)
       canvas.removeEventListener('pointerup', onPointerUp)
@@ -551,39 +620,15 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
       )}
 
       {selected >= 0 && names && (
-        <aside className="fixed left-6 top-6 z-30 w-[min(26rem,80vw)] overflow-hidden rounded-sm border border-white/10 bg-white/[0.06] p-6 backdrop-blur-2xl md:left-10 md:top-10">
-          <h2 className="font-display text-3xl leading-tight text-bone">
-            {names[selected]}
-            {info?.year ? <span className="text-bone/40"> ({info.year})</span> : null}
-          </h2>
-
-          {info && info.rating < 255 && (
-            <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.24em] text-bone/50">
-              nota {info.rating}
-            </p>
-          )}
-
-          {info && info.genres.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-2">
-              {info.genres.map((genre) => (
-                <li
-                  key={genre}
-                  className="rounded-full border border-white/15 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-bone/70"
-                >
-                  {genre}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <button
-            type="button"
-            onClick={() => closeRef.current()}
-            className="mt-6 border border-white/15 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.28em] text-bone/70 transition-colors duration-300 hover:border-bone hover:bg-bone hover:text-void"
-          >
-            fechar
-          </button>
-        </aside>
+        <GameCard
+          index={selected}
+          name={names[selected] ?? ''}
+          year={info?.year ?? 0}
+          rating={info?.rating ?? 255}
+          genres={info?.genres ?? []}
+          coverId={coverIds?.[selected] ?? null}
+          onClose={() => closeRef.current()}
+        />
       )}
 
       <span
