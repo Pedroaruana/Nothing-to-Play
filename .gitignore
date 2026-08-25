@@ -18,9 +18,8 @@ coverage/
 playwright-report/
 test-results/
 
-# gerados pelo ETL, nunca versionados
-apps/web/public/atlas/
-apps/web/public/info/
+# saída intermediária do ETL: capa baixada, cache, banco. o que o site serve
+# (atlas e info) fica versionado, senão o deploy sobe sem os arquivos
 tools/etl/out/
 *.db
 *.sqlite

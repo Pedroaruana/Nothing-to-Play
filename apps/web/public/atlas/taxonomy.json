@@ -1,0 +1,198 @@
+{
+  "genres": [
+    {
+      "id": 31,
+      "bit": 0,
+      "label": "Adventure",
+      "total": 10608
+    },
+    {
+      "id": 32,
+      "bit": 1,
+      "label": "Indie",
+      "total": 9688
+    },
+    {
+      "id": 12,
+      "bit": 2,
+      "label": "Role-playing (RPG)",
+      "total": 5127
+    },
+    {
+      "id": 13,
+      "bit": 3,
+      "label": "Simulator",
+      "total": 4942
+    },
+    {
+      "id": 15,
+      "bit": 4,
+      "label": "Strategy",
+      "total": 4909
+    },
+    {
+      "id": 9,
+      "bit": 5,
+      "label": "Puzzle",
+      "total": 4268
+    },
+    {
+      "id": 5,
+      "bit": 6,
+      "label": "Shooter",
+      "total": 4134
+    },
+    {
+      "id": 8,
+      "bit": 7,
+      "label": "Platform",
+      "total": 3464
+    },
+    {
+      "id": 33,
+      "bit": 8,
+      "label": "Arcade",
+      "total": 3157
+    },
+    {
+      "id": 14,
+      "bit": 9,
+      "label": "Sport",
+      "total": 2262
+    },
+    {
+      "id": 10,
+      "bit": 10,
+      "label": "Racing",
+      "total": 1691
+    },
+    {
+      "id": 4,
+      "bit": 11,
+      "label": "Fighting",
+      "total": 1325
+    },
+    {
+      "id": 25,
+      "bit": 12,
+      "label": "Hack and slash/Beat 'em up",
+      "total": 1264
+    },
+    {
+      "id": 2,
+      "bit": 13,
+      "label": "Point-and-click",
+      "total": 1105
+    },
+    {
+      "id": 16,
+      "bit": 14,
+      "label": "Turn-based strategy (TBS)",
+      "total": 1047
+    },
+    {
+      "id": 24,
+      "bit": 15,
+      "label": "Tactical",
+      "total": 825
+    }
+  ],
+  "platforms": [
+    {
+      "id": 6,
+      "bit": 0,
+      "label": "PC",
+      "total": 16794
+    },
+    {
+      "id": 14,
+      "bit": 1,
+      "label": "Mac",
+      "total": 5890
+    },
+    {
+      "id": 48,
+      "bit": 2,
+      "label": "PS4",
+      "total": 4858
+    },
+    {
+      "id": 130,
+      "bit": 3,
+      "label": "Switch",
+      "total": 4769
+    },
+    {
+      "id": 49,
+      "bit": 4,
+      "label": "XONE",
+      "total": 4122
+    },
+    {
+      "id": 3,
+      "bit": 5,
+      "label": "Linux",
+      "total": 3610
+    },
+    {
+      "id": 39,
+      "bit": 6,
+      "label": "iOS",
+      "total": 3241
+    },
+    {
+      "id": 34,
+      "bit": 7,
+      "label": "Android",
+      "total": 2667
+    },
+    {
+      "id": 167,
+      "bit": 8,
+      "label": "PS5",
+      "total": 2481
+    },
+    {
+      "id": 169,
+      "bit": 9,
+      "label": "Series X|S",
+      "total": 2155
+    },
+    {
+      "id": 9,
+      "bit": 10,
+      "label": "PS3",
+      "total": 1958
+    },
+    {
+      "id": 12,
+      "bit": 11,
+      "label": "X360",
+      "total": 1748
+    },
+    {
+      "id": 8,
+      "bit": 12,
+      "label": "PS2",
+      "total": 1491
+    },
+    {
+      "id": 5,
+      "bit": 13,
+      "label": "Wii",
+      "total": 1198
+    },
+    {
+      "id": 13,
+      "bit": 14,
+      "label": "DOS",
+      "total": 862
+    },
+    {
+      "id": 52,
+      "bit": 15,
+      "label": "Arcade",
+      "total": 844
+    }
+  ]
+}
