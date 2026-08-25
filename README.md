@@ -1,4 +1,4 @@
-# 🎮 Nothing to Play — 25 mil jogos num mosaico de Voronoi em WebGL
+#  Nothing to Play * 25 mil jogos num mosaico de Voronoi em WebGL
 
 Acervo de mais de 25 mil jogos da IGDB renderizados juntos num único mosaico contínuo, com relevo, foco e física de célula rodando na GPU em tempo real.
 
