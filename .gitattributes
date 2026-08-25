@@ -1,0 +1,8 @@
+# tudo em LF no repositório. o biome grava em LF e o windows checa em CRLF,
+# e sem isso o git marca arquivo como modificado sem nenhuma mudança real
+* text=auto eol=lf
+
+# binário: não mexer
+*.webp binary
+*.png binary
+*.bin binary

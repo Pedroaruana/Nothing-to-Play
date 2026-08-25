@@ -4,7 +4,12 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
+    "lint": "biome check .",
+    "format": "biome check . --write",
     "test": "pnpm --filter web test",
     "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.10"
   }
 }
