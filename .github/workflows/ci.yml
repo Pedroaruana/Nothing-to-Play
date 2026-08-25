@@ -32,6 +32,8 @@ jobs:
 
       - run: pnpm typecheck
 
+      - run: pnpm test
+
       # o build não precisa dos assets do etl: as páginas são estáticas e
       # o atlas só é buscado em runtime, no navegador
       - run: pnpm build

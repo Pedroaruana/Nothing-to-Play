@@ -43,7 +43,8 @@ Não existe um elemento de HTML por jogo. A cena inteira é um triângulo em tel
 - **Dados:** formato binário próprio de 14 bytes por jogo, lido inteiro na abertura
 - **ETL:** Node + sharp, roda offline e cospe os arquivos estáticos
 - **Monorepo:** pnpm workspaces
-- **CI:** GitHub Actions (typecheck dos dois pacotes + build)
+- **Testes:** Vitest, nas funções puras do motor
+- **CI:** GitHub Actions (typecheck + testes + build)
 - **Deploy:** Vercel, 100% estático, sem backend
 
 ## API usada
@@ -107,6 +108,20 @@ pnpm fetch    # baixa o catálogo da IGDB
 pnpm atlas    # monta os atlas de capa
 pnpm info     # gera os lotes de sinopse
 ```
+
+## Testes
+
+```bash
+pnpm test
+```
+
+Cobrem a parte do motor que é função pura e que quebra calada quando erra:
+
+- **espiral do lattice** — a conta que decide qual jogo aparece em qual posição precisa ser bijeção. Se dois pontos caírem no mesmo índice, dois lugares da tela mostram o mesmo jogo; se sobrar buraco, algum jogo nunca aparece
+- **câmera** — o ponto sob o cursor tem que ficar parado enquanto a roda do mouse gira, e o zoom tem que respeitar os limites
+- **leitor do manifesto binário** — cada campo lido da posição certa dentro dos 14 bytes, contagem de páginas, e recusa de arquivo com formato errado
+
+Shader não entra: aquilo se verifica olhando a tela.
 
 ## Desafios
 
