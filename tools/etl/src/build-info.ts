@@ -43,9 +43,7 @@ const corta = (texto: string) => {
 const run = async () => {
   await mkdir(PUBLIC_DIR, { recursive: true })
 
-  const games = JSON.parse(
-    await readFile(join(OUT_DIR, 'games.json'), 'utf8')
-  ) as RawGame[]
+  const games = JSON.parse(await readFile(join(OUT_DIR, 'games.json'), 'utf8')) as RawGame[]
 
   const lotes = Math.ceil(games.length / BATCH)
   let comSinopse = 0

@@ -1,11 +1,7 @@
 // helpers de WebGL2. se falhar devolve null e a UI cai no fallback,
 // erro de shader não pode derrubar a tela inteira
 
-const compile = (
-  gl: WebGL2RenderingContext,
-  type: number,
-  source: string
-): WebGLShader | null => {
+const compile = (gl: WebGL2RenderingContext, type: number, source: string): WebGLShader | null => {
   const shader = gl.createShader(type)
   if (!shader) return null
 

@@ -6,7 +6,14 @@ const RECORD_BYTES = 14
 
 /** monta um manifest.bin sintético, no mesmo layout que o etl escreve */
 const montarBinario = (
-  jogos: { id: number; cor: [number, number, number]; nota: number; ano: number; genero: number; plataforma: number }[],
+  jogos: {
+    id: number
+    cor: [number, number, number]
+    nota: number
+    ano: number
+    genero: number
+    plataforma: number
+  }[],
   { cols = 4, rows = 3, magic = 'NTPM' } = {}
 ) => {
   const buffer = new ArrayBuffer(HEADER_BYTES + jogos.length * RECORD_BYTES)
@@ -34,18 +41,35 @@ const montarBinario = (
 }
 
 const servir = (buffer: ArrayBuffer, ok = true) =>
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-    ok,
-    status: ok ? 200 : 404,
-    arrayBuffer: async () => buffer
-  }))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok,
+      status: ok ? 200 : 404,
+      arrayBuffer: async () => buffer
+    })
+  )
 
 afterEach(() => vi.unstubAllGlobals())
 
 describe('loadManifest', () => {
   const jogos = [
-    { id: 1942, cor: [10, 20, 30] as [number, number, number], nota: 88, ano: 2011, genero: 0b101, plataforma: 0b11 },
-    { id: 7, cor: [200, 100, 50] as [number, number, number], nota: 71, ano: 1998, genero: 0b10, plataforma: 0b1000 }
+    {
+      id: 1942,
+      cor: [10, 20, 30] as [number, number, number],
+      nota: 88,
+      ano: 2011,
+      genero: 0b101,
+      plataforma: 0b11
+    },
+    {
+      id: 7,
+      cor: [200, 100, 50] as [number, number, number],
+      nota: 71,
+      ano: 1998,
+      genero: 0b10,
+      plataforma: 0b1000
+    }
   ]
 
   it('lê cada campo na posição certa', async () => {

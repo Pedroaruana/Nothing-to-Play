@@ -169,9 +169,7 @@ const run = async () => {
       // média da miniatura vira a cor da célula enquanto o atlas não chegou.
       // é a mesma conta de reduzir pra 1x1, só que de graça, já temos os pixels
       const total = CELL_W * CELL_H
-      const year = game.first_release_date
-        ? new Date(game.first_release_date * 1000).getUTCFullYear()
-        : 0
+      const year = game.first_release_date ? new Date(game.first_release_date * 1000).getUTCFullYear() : 0
 
       writeRecord(manifest, index, {
         id: game.id,
@@ -180,8 +178,14 @@ const run = async () => {
         b: Math.round(sum[2]! / total),
         rating: game.total_rating === undefined ? 255 : Math.round(game.total_rating),
         year,
-        genreMask: maskOf((game.genres ?? []).map((genre) => genre.id), genreBit),
-        platformMask: maskOf((game.platforms ?? []).map((item) => item.id), platformBit)
+        genreMask: maskOf(
+          (game.genres ?? []).map((genre) => genre.id),
+          genreBit
+        ),
+        platformMask: maskOf(
+          (game.platforms ?? []).map((item) => item.id),
+          platformBit
+        )
       })
     })
 
@@ -196,10 +200,7 @@ const run = async () => {
   }
 
   await writeFile(join(PUBLIC_DIR, 'manifest.bin'), manifest)
-  await writeFile(
-    join(PUBLIC_DIR, 'taxonomy.json'),
-    JSON.stringify({ genres, platforms }, null, 2)
-  )
+  await writeFile(join(PUBLIC_DIR, 'taxonomy.json'), JSON.stringify({ genres, platforms }, null, 2))
 
   const seconds = ((Date.now() - started) / 1000).toFixed(1)
   console.log(`\n${games.length} capas em ${pages} páginas de atlas (${seconds}s)`)

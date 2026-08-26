@@ -7,10 +7,7 @@ const Score = ({ value, size = 44 }: Props) => {
   const circumference = 2 * Math.PI * radius
 
   return (
-    <span
-      className="relative grid shrink-0 place-items-center"
-      style={{ width: size, height: size }}
-    >
+    <span className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
       <svg aria-hidden viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
         <circle cx="20" cy="20" r={radius} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
         <circle

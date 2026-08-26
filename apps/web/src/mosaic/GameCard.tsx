@@ -29,10 +29,7 @@ const lerFavoritos = (): number[] => {
   }
 }
 
-const Botao = ({
-  children,
-  ...rest
-}: { children: React.ReactNode } & React.ComponentProps<'button'>) => (
+const Botao = ({ children, ...rest }: { children: React.ReactNode } & React.ComponentProps<'button'>) => (
   <button
     type="button"
     className="border border-white/20 bg-white/[0.06] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-bone/80 transition-colors duration-300 hover:border-bone hover:bg-bone hover:text-void focus-visible:border-bone focus-visible:outline-none"
@@ -67,9 +64,7 @@ const GameCard = ({ index, name, year, rating, genres, coverId, onClose }: Props
 
   const alternarFavorito = useCallback(() => {
     const atuais = lerFavoritos()
-    const proximos = atuais.includes(index)
-      ? atuais.filter((i) => i !== index)
-      : [...atuais, index]
+    const proximos = atuais.includes(index) ? atuais.filter((i) => i !== index) : [...atuais, index]
 
     try {
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(proximos))
@@ -183,7 +178,14 @@ const GameCard = ({ index, name, year, rating, genres, coverId, onClose }: Props
                 : 'border-white/20 bg-white/[0.06] text-bone/70 hover:border-bone hover:text-bone'
             }`}
           >
-            <svg aria-hidden viewBox="0 0 24 24" className="size-[17px]" fill={favorito ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="size-[17px]"
+              fill={favorito ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
               <path d="M12 20.5s-7.5-4.7-7.5-9.6A4.4 4.4 0 0 1 12 8.3a4.4 4.4 0 0 1 7.5 2.6c0 4.9-7.5 9.6-7.5 9.6Z" />
             </svg>
           </button>

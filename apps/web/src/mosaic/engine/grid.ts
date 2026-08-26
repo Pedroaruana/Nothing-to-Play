@@ -6,8 +6,7 @@ export type Camera = { x: number; y: number; zoom: number }
 export type Viewport = { width: number; height: number }
 
 /** quanto de mundo vale um pixel na altura atual */
-export const unitsPerPixel = (camera: Camera, viewport: Viewport) =>
-  (camera.zoom * 2) / viewport.height
+export const unitsPerPixel = (camera: Camera, viewport: Viewport) => (camera.zoom * 2) / viewport.height
 
 /** pixel da tela para coordenada de mundo, antes de qualquer deformação de lente */
 export const worldAt = (px: number, py: number, camera: Camera, viewport: Viewport) => {

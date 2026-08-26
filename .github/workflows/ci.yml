@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 # um push logo depois do outro cancela a checagem anterior, que já não interessa
 concurrency:
@@ -29,6 +30,8 @@ jobs:
       # o sharp compila binário nativo, e o allowBuilds do pnpm-workspace
       # é o que autoriza o script de instalação dele a rodar
       - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
 
       - run: pnpm typecheck
 

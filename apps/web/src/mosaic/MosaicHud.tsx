@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type ComponentProps, type ReactNode } from 'react'
+import { type ComponentProps, type ReactNode, useEffect, useState } from 'react'
 import { useLocale } from '@/src/i18n/LocaleProvider'
 import { COUNTS, PRESETS, type PresetId } from './presets'
 
@@ -36,9 +36,7 @@ const Card = ({
   <button
     type="button"
     className={`rounded-sm border transition-colors duration-300 ${
-      active
-        ? 'border-bone bg-white/[0.06] text-bone'
-        : 'border-white/15 text-bone/60 hover:border-white/40'
+      active ? 'border-bone bg-white/[0.06] text-bone' : 'border-white/15 text-bone/60 hover:border-white/40'
     }`}
     {...rest}
   >
@@ -71,21 +69,29 @@ const MosaicHud = ({ preset, count, onPreset, onCount, onReplay, stats, onStats 
   return (
     <>
       <div className="fixed right-6 top-6 z-40 flex items-center gap-2.5 md:right-8 md:top-8">
-        <Icon
-          aria-label="Sobre o projeto"
-          onClick={() => setPanel(panel === 'info' ? 'none' : 'info')}
-        >
-          <svg aria-hidden viewBox="0 0 24 24" className="size-[19px]" fill="none" stroke="currentColor" strokeWidth="1.4">
+        <Icon aria-label="Sobre o projeto" onClick={() => setPanel(panel === 'info' ? 'none' : 'info')}>
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            className="size-[19px]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          >
             <circle cx="12" cy="12" r="9.25" />
             <path d="M12 10.6v6.2M12 7.4h.01" strokeLinecap="round" />
           </svg>
         </Icon>
 
-        <Icon
-          aria-label="Configurações"
-          onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')}
-        >
-          <svg aria-hidden viewBox="0 0 24 24" className="size-[19px]" fill="none" stroke="currentColor" strokeWidth="1.4">
+        <Icon aria-label="Configurações" onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')}>
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            className="size-[19px]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+          >
             <circle cx="12" cy="12" r="3.2" />
             <path
               d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4 17 7M7 17l-1.6 1.6M18.6 18.6 17 17M7 7 5.4 5.4"
@@ -113,9 +119,9 @@ const MosaicHud = ({ preset, count, onPreset, onCount, onReplay, stats, onStats 
             <div className="space-y-4 text-sm leading-relaxed text-bone/65">
               <h2 className="font-display text-2xl text-bone">Nothing to Play?</h2>
               <p>
-                Mosaico de {count.toLocaleString('pt-BR')} capas resolvido por pixel num diagrama de
-                potência, com as células movidas por simulação de forças e iluminadas por raymarching
-                sobre o campo de distância.
+                Mosaico de {count.toLocaleString('pt-BR')} capas resolvido por pixel num diagrama de potência,
+                com as células movidas por simulação de forças e iluminadas por raymarching sobre o campo de
+                distância.
               </p>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-bone/40">
                 dados e capas por igdb

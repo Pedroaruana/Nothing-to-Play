@@ -180,9 +180,7 @@ const IntroScreen = ({ onEnter, onDone }: Props) => {
                 </svg>
               </button>
 
-              <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.26em] text-bone/20">
-                {t.hint}
-              </p>
+              <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.26em] text-bone/20">{t.hint}</p>
             </div>
           </div>
         </div>

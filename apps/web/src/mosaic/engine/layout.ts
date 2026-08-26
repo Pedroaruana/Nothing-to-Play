@@ -17,12 +17,7 @@ export const spiralIndex = (dcol: number, drow: number) => {
 }
 
 /** jogo mostrado numa posição do lattice */
-export const gameOfSlot = (
-  slot: number,
-  cols: number,
-  rows: number,
-  count: number
-) => {
+export const gameOfSlot = (slot: number, cols: number, rows: number, count: number) => {
   const col = slot % cols
   const row = (slot - col) / cols
 

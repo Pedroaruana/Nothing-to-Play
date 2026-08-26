@@ -100,7 +100,11 @@ export const createRenderer = (
   // a seleção sai do mesmo código do desenho. reimplementar a busca em js
   // daria divergência na primeira mudança de ruído, de peso ou de métrica
   const drawProgram = createProgram(gl, VORONOI_VERT, base)
-  const pickProgram = createProgram(gl, VORONOI_VERT, base.replace('#version 300 es\n', '#version 300 es\n#define PICK 1\n'))
+  const pickProgram = createProgram(
+    gl,
+    VORONOI_VERT,
+    base.replace('#version 300 es\n', '#version 300 es\n#define PICK 1\n')
+  )
   if (!drawProgram || !pickProgram) return null
 
   const vao = gl.createVertexArray()
@@ -388,9 +392,16 @@ export const createRenderer = (
       gl.bindTexture(gl.TEXTURE_2D_ARRAY, neighbors)
       gl.texSubImage3D(
         gl.TEXTURE_2D_ARRAY,
-        0, 0, 0, layer,
-        NEIGHBOR_W, NEIGHBOR_H, 1,
-        gl.RGBA, gl.UNSIGNED_BYTE, bitmap
+        0,
+        0,
+        0,
+        layer,
+        NEIGHBOR_W,
+        NEIGHBOR_H,
+        1,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        bitmap
       )
       bitmap.close()
       return true
@@ -412,7 +423,19 @@ export const createRenderer = (
     uploadPage: (page, bitmap) => {
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D_ARRAY, atlas)
-      gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, page, ATLAS_SIZE, ATLAS_SIZE, 1, gl.RGBA, gl.UNSIGNED_BYTE, bitmap)
+      gl.texSubImage3D(
+        gl.TEXTURE_2D_ARRAY,
+        0,
+        0,
+        0,
+        page,
+        ATLAS_SIZE,
+        ATLAS_SIZE,
+        1,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        bitmap
+      )
       loadedPages |= 1 << page
       bitmap.close()
     },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { unitsPerPixel, worldAt, zoomAt, type Camera, type Viewport } from './grid'
+import { type Camera, unitsPerPixel, type Viewport, worldAt, zoomAt } from './grid'
 
 const tela: Viewport = { width: 1600, height: 900 }
 const cam: Camera = { x: 3, y: -2, zoom: 12 }

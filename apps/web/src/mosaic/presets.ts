@@ -40,7 +40,18 @@ export const PRESETS: Record<PresetId, { label: string; look: Look }> = {
   // sem relevo e sem reflexo: o mosaico chapado, que é o mais rápido
   minimal: {
     label: 'Minimal',
-    look: { ...BASE, relief: 0, light: 0, env: 0, mediaDome: 0, ripple: 0, wobble: 0, border: 0.1, darkFar: 0.3, desat: 0.35 }
+    look: {
+      ...BASE,
+      relief: 0,
+      light: 0,
+      env: 0,
+      mediaDome: 0,
+      ripple: 0,
+      wobble: 0,
+      border: 0.1,
+      darkFar: 0.3,
+      desat: 0.35
+    }
   },
   // o padrão: almofada com volume, vidro e reflexo de ambiente
   depth: {

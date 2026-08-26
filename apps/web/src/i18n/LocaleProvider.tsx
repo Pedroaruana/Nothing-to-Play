@@ -1,14 +1,6 @@
 'use client'
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode
-} from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { DICT, type Dict, type Locale } from './dictionary'
 
 type Value = {
@@ -47,10 +39,7 @@ export const LocaleProvider = ({ children }: { children: ReactNode }) => {
     window.localStorage.setItem(STORAGE_KEY, next)
   }, [])
 
-  const value = useMemo(
-    () => ({ locale, setLocale: change, t: DICT[locale] }),
-    [locale, change]
-  )
+  const value = useMemo(() => ({ locale, setLocale: change, t: DICT[locale] }), [locale, change])
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
 }

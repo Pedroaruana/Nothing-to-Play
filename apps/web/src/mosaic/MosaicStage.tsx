@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from '@/src/hooks/useReducedMotion'
-import { unitsPerPixel, worldAt, zoomAt, type Camera } from './engine/grid'
+import { type Camera, unitsPerPixel, worldAt, zoomAt } from './engine/grid'
 import { gameOfSlot } from './engine/layout'
 import { loadManifest, type Manifest } from './engine/manifest'
 import { createRenderer, type Renderer } from './engine/renderer'
+import { createSimulation, type Simulation } from './engine/simulation'
 import FocusCard from './FocusCard'
 import GameCard from './GameCard'
 import MosaicHud from './MosaicHud'
 import { PRESETS, type PresetId } from './presets'
-import { createSimulation, type Simulation } from './engine/simulation'
 
 const ATLAS = '/atlas'
 const IGDB_COVER = 'https://images.igdb.com/igdb/image/upload/t_cover_big_2x'
@@ -217,8 +217,8 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
         for (let dx = -half; dx <= half; dx++) {
           if (layer >= renderer.neighborLayers) break
 
-          const c = ((col + dx) % sim.cols + sim.cols) % sim.cols
-          const r = ((row + dy) % sim.rows + sim.rows) % sim.rows
+          const c = (((col + dx) % sim.cols) + sim.cols) % sim.cols
+          const r = (((row + dy) % sim.rows) + sim.rows) % sim.rows
           const slot = r * sim.cols + c
           const game = gameOfSlot(slot, sim.cols, sim.rows, manifest!.count)
           const imageId = covers[game]
@@ -330,7 +330,15 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
       if (!renderer) return
 
       const point = toCanvas(event.clientX, event.clientY)
-      const next = zoomAt(camera, point.x, point.y, renderer.size(), Math.exp(event.deltaY * 0.0012), MIN_ZOOM, MAX_ZOOM)
+      const next = zoomAt(
+        camera,
+        point.x,
+        point.y,
+        renderer.size(),
+        Math.exp(event.deltaY * 0.0012),
+        MIN_ZOOM,
+        MAX_ZOOM
+      )
 
       camera.x = next.x
       camera.y = next.y
@@ -402,10 +410,7 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
               : PRESETS[presetRef.current].look.focusOffset,
 
           // hover deixa só a roseta acesa; seleção acende o acervo inteiro
-          darkFar:
-            selectedSlot >= 0
-              ? 0.85
-              : 1 - (1 - PRESETS[presetRef.current].look.darkFar) * warmup,
+          darkFar: selectedSlot >= 0 ? 0.85 : 1 - (1 - PRESETS[presetRef.current].look.darkFar) * warmup,
           desat: selectedSlot >= 0 ? 0.15 : PRESETS[presetRef.current].look.desat
         }
       }
@@ -541,7 +546,8 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
         if (namesRes.ok) setNames((await namesRes.json()) as string[])
 
         const taxRes = await fetch(`${ATLAS}/taxonomy.json`)
-        if (alive && taxRes.ok) setTaxonomy((await taxRes.json()) as { genres: { bit: number; label: string }[] })
+        if (alive && taxRes.ok)
+          setTaxonomy((await taxRes.json()) as { genres: { bit: number; label: string }[] })
         if (coversRes.ok) {
           covers = (await coversRes.json()) as string[]
           setCoverIds(covers)
@@ -606,7 +612,10 @@ const MosaicStage = ({ onReady, onReplay }: Props) => {
 
   return (
     <>
-      <canvas ref={canvasRef} className="fixed inset-0 z-10 h-full w-full cursor-grab touch-none opacity-0 transition-opacity duration-500 active:cursor-grabbing" />
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 z-10 h-full w-full cursor-grab touch-none opacity-0 transition-opacity duration-500 active:cursor-grabbing"
+      />
 
       {label && selected < 0 && info && (
         <FocusCard

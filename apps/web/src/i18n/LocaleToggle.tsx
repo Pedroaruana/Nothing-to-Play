@@ -1,7 +1,7 @@
 'use client'
 
-import { useLocale } from './LocaleProvider'
 import type { Locale } from './dictionary'
+import { useLocale } from './LocaleProvider'
 
 const OPTIONS: Locale[] = ['pt', 'en']
 
