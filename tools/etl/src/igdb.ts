@@ -60,7 +60,7 @@ export const query = async <T>(
       throw new Error(`${endpoint} falhou (${res.status}): ${await res.text()}`)
     }
 
-    const wait = THROTTLE_MS * Math.pow(3, attempt + 1)
+    const wait = THROTTLE_MS * 3 ** (attempt + 1)
     console.warn(`  ${res.status} em ${endpoint}, tentando de novo em ${wait}ms`)
     await sleep(wait)
   }

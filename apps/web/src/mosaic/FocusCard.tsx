@@ -17,7 +17,7 @@ const Score = ({ value }: { value: number }) => {
 
   return (
     <span className="relative grid size-11 shrink-0 place-items-center">
-      <svg viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
+      <svg aria-hidden viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
         <circle cx="20" cy="20" r={radius} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
         <circle
           cx="20"

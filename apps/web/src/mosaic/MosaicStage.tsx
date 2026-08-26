@@ -5,7 +5,7 @@ import { useReducedMotion } from '@/src/hooks/useReducedMotion'
 import { unitsPerPixel, worldAt, zoomAt, type Camera } from './engine/grid'
 import { gameOfSlot } from './engine/layout'
 import { loadManifest, type Manifest } from './engine/manifest'
-import { createRenderer, type Look, type Renderer } from './engine/renderer'
+import { createRenderer, type Renderer } from './engine/renderer'
 import FocusCard from './FocusCard'
 import GameCard from './GameCard'
 import MosaicHud from './MosaicHud'
@@ -52,7 +52,7 @@ const LOOK = PRESETS.depth.look
 // só o miolo é ampliado, o resto da tela mantém a densidade normal de células
 const LENS_SPAN = 0.38
 
-const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t))
+const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - 2 ** (-10 * t))
 
 // mesma lente do shader, pra saber onde o clique caiu de verdade
 const bulgeEase = (a: number) => {

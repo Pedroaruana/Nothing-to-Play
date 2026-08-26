@@ -10,7 +10,6 @@ import {
   PAGE_SIZE,
   PER_PAGE,
   RECORD_BYTES,
-  ROWS,
   writeHeader,
   writeRecord
 } from './atlas-format.ts'
@@ -153,7 +152,7 @@ const run = async () => {
       const y = row * CELL_H
 
       // copia linha por linha, a origem é contígua mas o destino tem passo de página
-      let sum = [0, 0, 0]
+      const sum = [0, 0, 0]
 
       for (let line = 0; line < CELL_H; line++) {
         const from = line * CELL_W * 3

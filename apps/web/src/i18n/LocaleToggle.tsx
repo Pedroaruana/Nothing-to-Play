@@ -10,7 +10,7 @@ const LocaleToggle = () => {
   const { locale, setLocale, t } = useLocale()
 
   return (
-    <div className="flex items-center gap-1.5" aria-label={t.localeLabel}>
+    <div className="flex items-center gap-1.5" role="group" aria-label={t.localeLabel}>
       {OPTIONS.map((option, index) => (
         <span key={option} className="flex items-center gap-1.5">
           {index > 0 && <span className="text-bone/15">/</span>}

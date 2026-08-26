@@ -75,7 +75,7 @@ const MosaicHud = ({ preset, count, onPreset, onCount, onReplay, stats, onStats 
           aria-label="Sobre o projeto"
           onClick={() => setPanel(panel === 'info' ? 'none' : 'info')}
         >
-          <svg viewBox="0 0 24 24" className="size-[19px]" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <svg aria-hidden viewBox="0 0 24 24" className="size-[19px]" fill="none" stroke="currentColor" strokeWidth="1.4">
             <circle cx="12" cy="12" r="9.25" />
             <path d="M12 10.6v6.2M12 7.4h.01" strokeLinecap="round" />
           </svg>
@@ -85,7 +85,7 @@ const MosaicHud = ({ preset, count, onPreset, onCount, onReplay, stats, onStats 
           aria-label="Configurações"
           onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')}
         >
-          <svg viewBox="0 0 24 24" className="size-[19px]" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <svg aria-hidden viewBox="0 0 24 24" className="size-[19px]" fill="none" stroke="currentColor" strokeWidth="1.4">
             <circle cx="12" cy="12" r="3.2" />
             <path
               d="M12 2.6v2.2M12 19.2v2.2M21.4 12h-2.2M4.8 12H2.6M18.6 5.4 17 7M7 17l-1.6 1.6M18.6 18.6 17 17M7 7 5.4 5.4"
